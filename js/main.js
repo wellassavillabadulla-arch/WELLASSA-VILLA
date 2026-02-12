@@ -42,11 +42,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // Contact Form handling
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
-        contactForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            // Here you would typically send the data to a server
-            alert('Thank you for your message! We will get back to you shortly.');
-            contactForm.reset();
+        contactForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const status = document.createElement('p'); // Create status message element
+            status.style.textAlign = 'center';
+            status.style.marginTop = '10px';
+            contactForm.appendChild(status);
+
+            const data = new FormData(event.target);
+
+            // Check if form has an action (Formspree ID)
+            if (contactForm.action === "" || contactForm.action.includes("YOUR_FORM_ID")) {
+                alert("Please verify the contact form setup. You need to add your Formspree ID in contact.html");
+                return;
+            }
+
+            try {
+                const response = await fetch(event.target.action, {
+                    method: contactForm.method,
+                    body: data,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    status.innerHTML = "Thanks for your submission! We will look into it and get back to you soon.";
+                    status.style.color = "green";
+                    contactForm.reset();
+                } else {
+                    const errorData = await response.json();
+                    if (Object.hasOwn(errorData, 'errors')) {
+                        status.innerHTML = errorData["errors"].map(error => error["message"]).join(", ");
+                    } else {
+                        status.innerHTML = "Oops! There was a problem submitting your form";
+                    }
+                    status.style.color = "red";
+                }
+            } catch (error) {
+                status.innerHTML = "Oops! There was a problem submitting your form";
+                status.style.color = "red";
+            }
         });
     }
 });
